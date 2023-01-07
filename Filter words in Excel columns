@@ -1,73 +1,63 @@
 # Objetivo
- Filtrar palavras-chaves que aparecem em textos nas linhas de uma coluna do Excel.
-
-## Bibliotecas usadas no python:
- Pandas, numpy e openpyxl
+ #Filtrar palavras-chaves que aparecem em textos nas linhas de uma coluna do Excel.
  
- ### Passos que o script realiza:
-  1. Localiza e abre o arquivo .xlsx
-  2. Separa as colunas que deseja usar
-  3. Renomeia e limpa as linhas vazias
-  4. Ordena por ordem númerica
-  5. Deixa todas as palavras em minusculo para facilitar a contagem
-  6. Conta quantas vezes determinada palavra chave aparece
-  7. Cria uma nova coluna/planilha com os dados filtrados
+ # Passos que o script realiza:
+  #1. Localiza e abre o arquivo .xlsx
+  #2. Separa as colunas que deseja usar
+  #3. Renomeia e limpa as linhas vazias
+  #4. Ordena por ordem númerica
+  #5. Deixa todas as palavras em minusculo para facilitar a contagem
+  #6. Conta quantas vezes determinada palavra chave aparece
+  #7. Cria uma nova coluna/planilha com os dados filtrados
   
-  --------------------------------------------------
+#--------------------------------------------------
 import pandas as pd
 import numpy as np
 import openpyxl as op
 
-**Local do arquivo**
+#Local do arquivo
 Local = r'Diretorio do computador onde o arquivo está'
 
-**Ler o arquivo**
-file = pd.read_excel(os.path.join(Local, r'_nome do arquivo.xlsx_'))
+#Ler o arquivo
+file = pd.read_excel(os.path.join(Local, r'nome do arquivo.xlsx'))
 
-**Selecionar coluna**
-cc = file.iloc[:,[_numero da coluna_, _numero da coluna_]]
-__A contagem da coluna começa no zero__
+#Selecionar coluna
+cc = file.iloc[:,[numero da coluna, numero da coluna]]
+#A contagem da coluna começa no zero
 
-**Ordenar a coluna**
-cc = cc.sort_values('_informar coluna que deseja ordenar_')
-__Caso alguma delas possuir números__
+#Ordenar a coluna
+cc = cc.sort_values('informar coluna que deseja ordenar')
+#Caso alguma delas possuir números
 
-**Renomear colunas**
+#Renomear colunas
 cc = cc.rename(columns={'_nome antigo_':'_nome novo_', '_nome antigo_':'_nome novo_'})
-__Caso deseje renomear as colunas para ficar mais fácil a manipulação das colunas(com nomes menores)__
 
-**Limpando dados/colunas vazias**
+#Limpando dados/colunas vazias
 cc = (cc.dropna(axis=0) ) 
-__axis=0 vai limpar a planilha inteira__
+#axis=0 vai limpar todas as linhas com algum valor vazio
 
-**Deixando a coluna Programas_Sistemas com caracteres em minúsculo**
-ccm= cc['_nome da coluna'].str.lower()
+#Deixando a coluna Programas_Sistemas com caracteres em minúsculo
+ccm= cc['nome da coluna'].str.lower()
 
-**Criando uma coluna para as palavras em minúsculo para filtrar ela**
-cc['_nome da coluna nova_'] = ccm.str.lower()
+#Criando uma coluna para as palavras em minúsculo para filtrar ela
+cc['nome da coluna nova'] = ccm.str.lower()
 
-##contagem dos das palavras-chaves
+#contagem dos das palavras-chaves
 
-filter = ['_palavra para filtrar_' in string for string in cc['_coluna que deseja filtrar_']]
+filter = ['palavra para filtrar' in string for string in cc['_coluna que deseja filtrar_']]
 palavrafiltrada_count = cc[filter]['_coluna que deseja filtrar_'].count()
-__A coluna que deseja filtrar nesse caso é a coluna com os caracteres minúsculos__
-__Criar a quantidade de filtros necessários__
+#A coluna que deseja filtrar nesse caso é a coluna com os caracteres minúsculos__
 
-**VAMOS PARA OS MOMENTOS FINAIS**
+#Aqui é preciso dizer qual foi a palavra que você filtrou 
 
-__Aqui é preciso dizer qual foi a palavra que você filtrou (vai aparecer embaixo da primeira coluna que vamos criar)__
-__E é preciso por junto o contador de quantas vezes aquela palavra apareceu__
-
-colunasdf = [['_Nome_', palavrafiltrada_count],['_Nome2', palavrafiltrada2_count]]
+colunasdf = [['Nome', palavrafiltrada_count],['Nome2', palavrafiltrada2_count]]
 
 ##Criando a planilha
 
-**Criamos um data frame com a variavel da linha acima e o nome das colunas onde essas informações vao ficar respectivamente**
+#Criamos um data frame com a variavel da linha acima e o nome das colunas onde essas informações vao ficar respectivamente
 df = pd.DataFrame(colunasdf, columns=['_NomeDacoluna1', 'NomeDacoluna2'])
 
 planilhafinal = pd.DataFrame(df)
 planilhafinal.to_excel(r'_diretorio_\NomeDaPlanilhaNova.xlsx', index = False)
-__Por fim, criamos o arquivo final em excel do DataFrame e indicamos onde ele será salvo e o nome da planilha__
-
-
-  
+#Por fim, criamos o arquivo final em excel do DataFrame e indicamos onde ele será salvo e o nome da planilha
+#Index falso significa que não estamos substuindo os valores de nenhuma planilha e sim gerando uma nova
