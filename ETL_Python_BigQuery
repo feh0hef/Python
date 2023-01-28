@@ -76,12 +76,9 @@ except pyodbc.DatabaseError as e:
     cursor_bq.rollback() #não adicionar as querys caso tenha erro
 
 #LEFT exclusive join para ter os dados que faltam
-tabela_df3 = pd.merge(tabela_df2, depara, on=['PK','PK'], how="outer", indicator=True
-              ).query('_merge=="left_only"')
-print("Identificação dos dados ausentes.")
-    #excluindo dados vazios e colunas adicionadas pelo LEFT exclusive join
-tabela_df3.dropna(axis=1, how='all', inplace=True)
-tabela_df3 = tabela_df3.drop(columns=['_merge'])
+tabela_df3 = pd.merge(tabela_df2, depara, how='outer', on="Primary_Key", indicator=True)\
+        .query("_merge == 'left_only'")\
+        .drop("_merge", axis=1)
 
 """Após criar o Dataframe com os valores faltantes, é só transformar os valores em lista para realizarmos o Insert"""
 
