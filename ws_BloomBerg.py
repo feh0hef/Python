@@ -4,16 +4,21 @@ import requests
 from bs4 import BeautifulSoup
 
 #parametros para conexão
-url = 'https://www.bloomberglinea.com.br/mercados/'
-headers = {'user-agent' : 'Mozilla/5.0'}
 
-#conexão com o site
-resposta = requests.get(url,headers=headers)
-conteudo = resposta.content
+def conexão():
 
-#HTML
-soup = BeautifulSoup(conteudo, "html.parser")
-noticias = soup.findAll('div', attrs={'class': 'flex flex-col lg:flex-col h-full false'})
+    url = 'https://www.bloomberglinea.com.br/mercados/'
+    headers = {'user-agent' : 'Mozilla/5.0'}
+
+    #Conexão com o site
+    resposta = requests.get(url,headers=headers)
+    conteudo = resposta.content
+
+    #HTML
+    soup = BeautifulSoup(conteudo, "html.parser")
+    return soup
+
+noticias = conexão().findAll('div', attrs={'class': 'flex flex-col lg:flex-col h-full false'})
 
 #Lista para guardar o link e o titulo
 lista_noticias = []
@@ -25,14 +30,18 @@ for noticia in noticias:
     lista_noticias.append([Informação.text, 'https://www.bloomberglinea.com.br'+Informação['href']])
     #tem que adicionar 'https://www.bloomberglinea.com.br' na frente do link do href
 
-#Criar Dataframe com o título e link
-df = pd.DataFrame(lista_noticias, columns=["Titulo", "Link"])
+def tratamento(lista_noticias):
 
-#Filtro de informações
-Chaves = ['Banco Central', 'Minério', 'Lucro', 'Fed',\
-          'Copom', 'Selic', 'Inflação','Crise', 'Petróleo', 'Federal Reserve', 'Juros', 'Crédito', 'Commodities']
+    #Criar Dataframe com o título e link
+    df = pd.DataFrame(lista_noticias, columns=["Titulo", "Link"])
 
-df = df[df['Titulo'].str.contains("|".join(Chaves), na=False)]
+    #Filtro de informações
+    Chaves = ['Banco Central', 'Minério', 'Lucro', 'Fed',\
+                'Copom', 'Selic', 'Inflação','Crise', 'Petróleo', 'Federal Reserve', 'Juros', 'Crédito', 'Commodities']
 
-#Ultimas 5 noticias
-ultimas5 = df.head(5)
+    df = df[df['Titulo'].str.contains("|".join(Chaves), na=False)]
+    #Ultimas 5 noticias
+    ultimas = df.head(5)
+    return ultimas
+
+df = tratamento(lista_noticias)
