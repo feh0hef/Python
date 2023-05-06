@@ -13,86 +13,97 @@ import os.path
 
 """Para conexão é necessário o driver ODBC instalado, o nome do projeto e do dataset do BQ, o refresh token encontrado no SIMBA ODBC, o endereço do projeto e o usuário."""
 
-#Variaveis para conexão
-d_BQ = "Simba ODBC Driver for Google BigQuery" #conexão via Driver ODBC
-p_BQ = "projeto" #Projeto
-ds_BQ = "Dataset" 
-r_BQ = "refresh token"
-k_BQ = "//cloudresourcemanager.googleapis.com/projects/nomedoprojeto"
-e_BQ = "usuario@email.com"
+def conexão():
+
+    #Variaveis para conexão
+    d_BQ = "Simba ODBC Driver for Google BigQuery" #conexão via Driver ODBC
+    p_BQ = "projeto" #Projeto
+    ds_BQ = "Dataset" 
+    r_BQ = "refresh token"
+    k_BQ = "//cloudresourcemanager.googleapis.com/projects/nomedoprojeto"
+    e_BQ = "usuario@email.com"
+    conx = 'DRIVER={'+d_BQ+'};OAuthMechanism=1;RefreshToken='+r_BQ+';Catalog='+p_BQ+';IgnoreTransactions=1'
+    return conx
 
 #Realizando a conexão
-cnxn_bq = pyodbc.connect('DRIVER={'+d_BQ+'};OAuthMechanism=1;RefreshToken='+r_BQ+';Catalog='+p_BQ+';IgnoreTransactions=1') #Conexão
-print("Conexão realizada com sucesso")
+cnxn_bq = pyodbc.connect(conexão()) #Conexão
 cursor_bq = cnxn_bq.cursor()
+print("Conexão realizada com sucesso")
 
 """O carregamento do DataFrame tem como origem um arquivo da máquina local"""
 
-#local do arquivo
-local = r'Diretorio do arquivo'
-print("Arquivo Localizado")
+def origem(local = r'Diretorio do arquivo', arquivo = r'Nome do arquivo.xlsx'):
 
-#selecionar arquivo
-tabela_df = pd.read_excel(os.path.join(local, r'NomeArquivo.xlsx'))
-print("Dataframe criado")
+    #selecionar arquivo
+    tabela_df = pd.read_excel(os.path.join(local, arquivo))
+    print("Dataframe criado")
+    return tabela_df
 
+df = origem(local = r'Diretorio do arquivo', arquivo = r'Nome do arquivo.xlsx')
 """Como cada tabela possui seu próprio tratamento, considere apenas o necessário.
 
 Pórem, sempre ajuste o tipo dos dados da tabela antes de partir para as próximas etapas, 
 se o SCHEMA informar que o campo possui valor INT(64), converta os dados da coluna que serão inseridos ali para INT.**
 """
 
-#Tratamento da tabela
- #convertendo o tipo de dado dos campos
-tabela_df['col1'] = pd.to_datetime(tabela_df['col1']) 
-tabela_df['col2'] = tabela_df['col3'].astype(str)
-tabela_df['colN'] = tabela_df['coln'].astype(n)
-    #Para usar a ultima data da tabela como limite superior
-datamax_c = tabela_df['col1'].max()
-tabela_df2 = tabela_df[(tabela_df['col1'] > '2022-01-01 00:00:00') & (tabela_df['col1'] < datamax_c)]
-    #Removendo coluna adicionada durante o tratamento
-tabela_df2.drop(["Unnamed: 0"], axis=1, inplace=True)
-    #Renomeando a coluna para realizar a comparação
-tabela_df2.rename(columns={'Antigo_Nome': 'PK'}, inplace = True)
+def tratamento(df):
 
-tabela_df2 #tabela tratada
-print("Filtro realizado")
+    #Tratamento da tabela
+    #convertendo o tipo de dado dos campos
+    df['col1'] = pd.to_datetime(df['col1']) 
+    df['col2'] = df['col3'].astype(str)
+    df['colN'] = df['coln'].astype(n)
+        #Para usar a ultima data da tabela como limite superior
+    datamax_c = df['col1'].max()
+    df2 = df[(df['col1'] > '2022-01-01 00:00:00') & (df['col1'] < datamax_c)]
+        #Removendo coluna adicionada durante o tratamento
+    df2.drop(["Unnamed: 0"], axis=1, inplace=True)
+        #Renomeando a coluna para realizar a comparação
+    df2.rename(columns={'Antigo_Nome': 'PK'}, inplace = True)
 
-"""Aqui, irei realizar a comparação com os dados já presentes na tabela (que está no banco de dados), 
-para inserirmos apenas os valores faltantes.
+    df2 #tabela tratada
+    print("Filtro realizado")
+    
+    """Aqui, irei realizar a comparação com os dados já presentes na tabela (que está no banco de dados), 
+    para inserirmos apenas os valores faltantes.
 
-Caso seja a primeira vez que é realizado a inserção dos dados, 
-essa etapa pode ser pulada para a parte de criação da lista de dados.
-"""
+    Caso seja a primeira vez que é realizado a inserção dos dados, 
+    essa etapa pode ser pulada para a parte de criação da lista de dados.
+    """
 
-#Puxar tabela que já existe para comparar os dados
-try:
-    print("Coletando dados já existentes para comparação.")
-    query = "SELECT * FROM dataset.tabela"
-    depara = pd.read_sql(query, cnxn_bq)
-except pyodbc.DatabaseError as e:
-    print(e) #mensagem de erro
-    print("ERRO ENCONTRADO")
-    cursor_bq.rollback() #não adicionar as querys caso tenha erro
+    #Puxar tabela que já existe para comparar os dados
+    try:
+        print("Coletando dados já existentes para comparação.")
+        query = "SELECT * FROM dataset.tabela"
+        depara = pd.read_sql(query, cnxn_bq)
+    except pyodbc.DatabaseError as e:
+        print(e) #mensagem de erro
+        print("ERRO ENCONTRADO")
+        cursor_bq.rollback() #não adicionar as querys caso tenha erro
 
-#LEFT exclusive join para ter os dados que faltam
-tabela_df3 = pd.merge(tabela_df2, depara, how='outer', on="Primary_Key", indicator=True)\
-        .query("_merge == 'left_only'")\
-        .drop("_merge", axis=1)
-
-"""Após criar o Dataframe com os valores faltantes, é só transformar os valores em lista para realizarmos o Insert"""
+    #LEFT exclusive join para ter os dados que faltam
+    df3 = pd.merge(df2, depara, on=['PK','PK'], how="outer", indicator=True
+                ).query('_merge=="left_only"')
+    print("Identificação dos dados ausentes.")
+        #excluindo dados vazios e colunas adicionadas pelo LEFT exclusive join
+    df3.dropna(axis=1, how='all', inplace=True)
+    df3 = df3.drop(columns=['_merge'])
+    """Após criar o Dataframe com os valores faltantes, é só transformar os valores em lista para realizarmos o Insert"""
+    return df3
 
 #criar lista
-lista_dados = tabela_df3.values.tolist()
+lista_dados = tratamento(df).values.tolist()
 print("Valores do Dataframe convertido em Lista")
 
 """É importante que o SCHEMA já exista na tabela (caso for adicionar a 1º vez os dados)"""
+
+sql = "INSERT INTO `dataset.tabela` (Colunas) VALUES (?, ..., ?)"
 
 #adicionar dados
 try:
     print("Inicio da execução da query...")
     #Inserir dados na tabela
-    cursor_bq.executemany("INSERT INTO `dataset.tabela` (Colunas) VALUES (?, ..., ?)", lista_dados) #Query
+    cursor_bq.executemany(sql, lista_dados) #Query
     cursor_bq.commit() #adicionar a Query
     print("Dados inseridos com sucesso")
 except pyodbc.DatabaseError as e:
